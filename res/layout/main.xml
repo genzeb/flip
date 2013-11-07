@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"> 
+    
+	<ImageView   
+		android:layout_height="fill_parent"
+		android:layout_width="fill_parent" 
+		android:src="@drawable/grid"
+		android:scaleType="centerCrop"
+		android:layout_gravity="center"
+    	android:gravity="center"
+		android:layout_centerInParent="true" />
+		
+	<ViewFlipper
+		android:id="@+id/viewFlipper" 
+		android:layout_width="300dp"
+		android:layout_height="450dp" 
+    	android:gravity="center"
+		android:layout_gravity="center"
+		android:addStatesFromChildren="true"
+		android:layout_centerInParent="true"> 
+    
+		<ImageView  
+			android:id="@+id/imageView1" 			
+			android:src="@drawable/larrypage"
+			android:layout_width="300dp"
+			android:layout_height="450dp" 
+			android:scaleType="centerCrop"
+			android:layout_gravity="center"
+	    	android:gravity="center"
+    		android:clickable="true"
+			android:layout_centerInParent="true" />
+		
+		<ImageView  
+			android:id="@+id/imageView2" 
+			android:src="@drawable/larrypage_bio"
+			android:layout_width="300dp"
+			android:layout_height="450dp" 
+			android:scaleType="centerCrop"
+			android:layout_gravity="center"
+	    	android:gravity="center"
+    		android:clickable="true"
+			android:layout_centerInParent="true" /> 
+		
+	</ViewFlipper>
+	
+</RelativeLayout>
