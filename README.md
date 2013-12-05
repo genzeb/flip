@@ -1,7 +1,7 @@
 Flip
 ====
 
-See <a href="https://code.google.com/p/android-3d-flip-view-transition/">project website</a> for more detail.
+See <a href="http://genzeb.github.io/flip/">project website</a> for more detail.
 
 ----
 
