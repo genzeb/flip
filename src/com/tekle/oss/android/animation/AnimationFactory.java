@@ -41,6 +41,8 @@ import android.widget.ViewAnimator;
  */
 public class AnimationFactory {
 	
+	private static final int DEFAULT_FLIP_TRANSITION_DURATION = 500;
+
 	/**
 	 * The {@code FlipDirection} enumeration defines the most typical flip view transitions: left-to-right and right-to-left. {@code FlipDirection} is used during the creation of {@link FlipAnimation} animations.
 	 * 
@@ -140,7 +142,7 @@ public class AnimationFactory {
 		return result;
 		
 	}
-	
+
 	/**
 	 * Flip to the next view of the {@code ViewAnimator}'s subviews. A call to this method will initiate a {@link FlipAnimation} to show the next View.  
 	 * If the currently visible view is the last view, flip direction will be reversed for this transition.
@@ -149,6 +151,18 @@ public class AnimationFactory {
 	 * @param dir the direction of flip
 	 */
 	public static void flipTransition(final ViewAnimator viewAnimator, FlipDirection dir) {   
+		flipTransition(viewAnimator, dir, DEFAULT_FLIP_TRANSITION_DURATION);
+	}
+
+	/**
+	 * Flip to the next view of the {@code ViewAnimator}'s subviews. A call to this method will initiate a {@link FlipAnimation} to show the next View.  
+	 * If the currently visible view is the last view, flip direction will be reversed for this transition.
+	 *  
+	 * @param viewAnimator the {@code ViewAnimator}
+	 * @param dir the direction of flip
+	 * @param duration the transition duration in milliseconds
+	 */
+	public static void flipTransition(final ViewAnimator viewAnimator, FlipDirection dir, long duration) {   
 		
 		final View fromView = viewAnimator.getCurrentView();
 		final int currentIndex = viewAnimator.getDisplayedChild();
@@ -156,7 +170,7 @@ public class AnimationFactory {
 		
 		final View toView = viewAnimator.getChildAt(nextIndex);
 
-		Animation[] animc = AnimationFactory.flipAnimation(fromView, toView, (nextIndex < currentIndex?dir.theOtherDirection():dir), 500, null);
+		Animation[] animc = AnimationFactory.flipAnimation(fromView, toView, (nextIndex < currentIndex?dir.theOtherDirection():dir), duration, null);
   
 		viewAnimator.setOutAnimation(animc[0]);
 		viewAnimator.setInAnimation(animc[1]);
