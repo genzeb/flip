@@ -30,6 +30,25 @@ It's that easy!
 
 If you want to create a FlipAnimation and use it some other way, you may do so by the constructor or the AnimationFactory.flipAnimation method.
 
+Using as a Gradle Dependency
+----
+
+Get a copy of the source here.
+
+Download and configure Gradle 1.9 from [here](http://www.gradle.org/downloads)
+
+Execute the following command to assemble the AAR file
+
+    ./gradlew assembleRelease
+
+Upload the AAR file into your artifact repository.
+
+Declare a dependency in your build.gradle
+
+    dependencies {
+        compile 'com.tekle.oss.android:flip:1.0'
+    }
+
 Disclaimer
 ----
 You may use, modify, etc. this code. However, give credit per the license agreement.
