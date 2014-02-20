@@ -35,12 +35,15 @@ import android.view.animation.Transformation;
  *  @author Ephraim A. Tekle
  *
  */
-public class FlipAnimation extends Animation { 
+public class FlipAnimation extends Animation {
+    public static final int ROTATION_X = 0;
+    public static final int ROTATION_Y = 1;
 	private final float mFromDegrees;
 	private final float mToDegrees;
 	private final float mCenterX;
 	private final float mCenterY;
 	private Camera mCamera;
+    private int mDirection;
 	
 	private final ScaleUpDownEnum scaleType;
 	 
@@ -68,6 +71,7 @@ public class FlipAnimation extends Animation {
 		mCenterY = centerY;
 		this.scale = (scale<=0||scale>=1)?SCALE_DEFAULT:scale;
 		this.scaleType = scaleType==null?ScaleUpDownEnum.SCALE_CYCLE:scaleType;
+        mDirection = ROTATION_Y;
 	}
 
 	@Override
@@ -89,7 +93,10 @@ public class FlipAnimation extends Animation {
 
 		camera.save();
 
-		camera.rotateY(degrees); 
+        if (mDirection == ROTATION_X)
+            camera.rotateX(degrees);
+        else
+            camera.rotateY(degrees);
 
 		camera.getMatrix(matrix);
 		camera.restore();
@@ -101,7 +108,14 @@ public class FlipAnimation extends Animation {
 
 	}
 
-	
+    /**
+     * Get the current direction, it can be {@link #ROTATION_X} or {#ROTATION_Y}
+     * @param direction
+     */
+    public void setDirection(int direction) {
+        mDirection = direction;
+    }
+
 	/**
 	 * This enumeration is used to determine the zoom (or scale) behavior of a {@link FlipAnimation}.
 	 * 
