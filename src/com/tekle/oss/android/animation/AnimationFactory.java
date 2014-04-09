@@ -50,8 +50,10 @@ public class AnimationFactory {
 	 *
 	 */
 	public static enum FlipDirection {
-		LEFT_RIGHT, 
-		RIGHT_LEFT;
+        LEFT_RIGHT,
+        RIGHT_LEFT,
+        TOP_BOTTOM,
+        BOTTOM_TOP;
 		
 		public float getStartDegreeForFirstView() {
 			return 0;
@@ -59,23 +61,27 @@ public class AnimationFactory {
 		
 		public float getStartDegreeForSecondView() {
 			switch(this) {
-			case LEFT_RIGHT:
-				return -90;
-			case RIGHT_LEFT:
-				return 90;
-			default:
-				return 0;
+            case LEFT_RIGHT:
+            case TOP_BOTTOM:
+                return -90;
+            case RIGHT_LEFT:
+            case BOTTOM_TOP:
+                return 90;
+            default:
+                return 0;
 			}
 		}
 		
 		public float getEndDegreeForFirstView() {
 			switch(this) {
-			case LEFT_RIGHT:
-				return 90;
-			case RIGHT_LEFT:
-				return -90;
-			default:
-				return 0;
+            case LEFT_RIGHT:
+            case TOP_BOTTOM:
+                return 90;
+            case RIGHT_LEFT:
+            case BOTTOM_TOP:
+                return -90;
+            default:
+                return 0;
 			}
 		}
 		
@@ -85,12 +91,16 @@ public class AnimationFactory {
 		
 		public FlipDirection theOtherDirection() {
 			switch(this) {
-			case LEFT_RIGHT:
-				return RIGHT_LEFT;
-			case RIGHT_LEFT:
-				return LEFT_RIGHT;
-			default:
-				return null;
+            case LEFT_RIGHT:
+                return RIGHT_LEFT;
+            case TOP_BOTTOM:
+                return BOTTOM_TOP;
+            case RIGHT_LEFT:
+                return LEFT_RIGHT;
+            case BOTTOM_TOP:
+                return TOP_BOTTOM;
+            default:
+                return null;
 			}
 		}
 	};
@@ -114,12 +124,17 @@ public class AnimationFactory {
 		float centerY;
 		
 		centerX = fromView.getWidth() / 2.0f;
-		centerY = fromView.getHeight() / 2.0f; 
-		
-		Animation outFlip= new FlipAnimation(dir.getStartDegreeForFirstView(), dir.getEndDegreeForFirstView(), centerX, centerY, FlipAnimation.SCALE_DEFAULT, FlipAnimation.ScaleUpDownEnum.SCALE_DOWN);
+		centerY = fromView.getHeight() / 2.0f;
+
+        FlipAnimation outFlip= new FlipAnimation(dir.getStartDegreeForFirstView(), dir.getEndDegreeForFirstView(), centerX, centerY, FlipAnimation.SCALE_DEFAULT, FlipAnimation.ScaleUpDownEnum.SCALE_DOWN);
 		outFlip.setDuration(duration);
 		outFlip.setFillAfter(true);
-		outFlip.setInterpolator(interpolator==null?new AccelerateInterpolator():interpolator); 
+		outFlip.setInterpolator(interpolator==null?new AccelerateInterpolator():interpolator);
+
+        if (dir == FlipDirection.BOTTOM_TOP || dir == FlipDirection.TOP_BOTTOM)
+            outFlip.setDirection(FlipAnimation.ROTATION_X);
+        else
+            outFlip.setDirection(FlipAnimation.ROTATION_Y);
 
 		AnimationSet outAnimation = new AnimationSet(true);
 		outAnimation.addAnimation(outFlip); 
@@ -128,13 +143,18 @@ public class AnimationFactory {
 		// Uncomment the following if toView has its layout established (not the case if using ViewFlipper and on first show)
 		//centerX = toView.getWidth() / 2.0f;
 		//centerY = toView.getHeight() / 2.0f; 
-		
-		Animation inFlip = new FlipAnimation(dir.getStartDegreeForSecondView(), dir.getEndDegreeForSecondView(), centerX, centerY, FlipAnimation.SCALE_DEFAULT, FlipAnimation.ScaleUpDownEnum.SCALE_UP);
+
+        FlipAnimation inFlip = new FlipAnimation(dir.getStartDegreeForSecondView(), dir.getEndDegreeForSecondView(), centerX, centerY, FlipAnimation.SCALE_DEFAULT, FlipAnimation.ScaleUpDownEnum.SCALE_UP);
 		inFlip.setDuration(duration);
 		inFlip.setFillAfter(true);
-		inFlip.setInterpolator(interpolator==null?new AccelerateInterpolator():interpolator);
-		inFlip.setStartOffset(duration);   
-		
+		inFlip.setInterpolator(interpolator == null ? new AccelerateInterpolator() : interpolator);
+		inFlip.setStartOffset(duration);
+
+        if (dir == FlipDirection.BOTTOM_TOP || dir == FlipDirection.TOP_BOTTOM)
+            inFlip.setDirection(FlipAnimation.ROTATION_X);
+        else
+            inFlip.setDirection(FlipAnimation.ROTATION_Y);
+
 		AnimationSet inAnimation = new AnimationSet(true); 
 		inAnimation.addAnimation(inFlip); 
 		result[1] = inAnimation; 
