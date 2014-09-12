@@ -191,11 +191,29 @@ public class AnimationFactory {
 		final View toView = viewAnimator.getChildAt(nextIndex);
 
 		Animation[] animc = AnimationFactory.flipAnimation(fromView, toView, (nextIndex < currentIndex?dir.theOtherDirection():dir), duration, null);
-  
-		viewAnimator.setOutAnimation(animc[0]);
-		viewAnimator.setInAnimation(animc[1]);
+
+        viewAnimator.setOutAnimation(animc[0]);
+        viewAnimator.setInAnimation(animc[1]);
+
+        // Retain viewAnimator until animation ends
+        viewAnimator.setHasTransientState(true);
+        animc[1].setAnimationListener(new AnimationListener() {
+            @Override
+            public void onAnimationStart(Animation animation) {
+            }
+
+            @Override
+            public void onAnimationEnd(Animation animation) {
+                // Release viewAnimator
+                viewAnimator.setHasTransientState(false);
+            }
+
+            @Override
+            public void onAnimationRepeat(Animation animation) {
+            }
+        });
 		
-		viewAnimator.showNext();   
+		viewAnimator.showNext();
 	}
 	
 	//////////////
@@ -310,7 +328,7 @@ public class AnimationFactory {
 	 * @param duration the animation duration in milliseconds
 	 * @param delay how long to wait before starting the animation, in milliseconds
 	 * @return a fade animation
-	 * @see #fadeInAnimation(View, long)
+	 * @see #fadeInAnimation(long, long)
 	 */
 	public static Animation fadeInAnimation(long duration, long delay) {  
 		
@@ -328,7 +346,7 @@ public class AnimationFactory {
 	 * @param duration the animation duration in milliseconds
 	 * @param delay how long to wait before starting the animation, in milliseconds
 	 * @return a fade animation
-	 * @see #fadeOutAnimation(View, long)
+	 * @see #fadeOutAnimation(long, long)
 	 */
 	public static Animation fadeOutAnimation(long duration, long delay) {   
 
