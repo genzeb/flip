@@ -19,17 +19,19 @@
  *  @author Ephraim A. Tekle
  *
  */
-package com.tekle.oss.android.animation;  
+package com.tekle.oss.android.animation;
 
+import android.animation.ValueAnimator;
+import android.annotation.SuppressLint;
 import android.view.View;
 import android.view.animation.AccelerateInterpolator;
 import android.view.animation.AlphaAnimation;
 import android.view.animation.Animation;
+import android.view.animation.Animation.AnimationListener;
 import android.view.animation.AnimationSet;
 import android.view.animation.DecelerateInterpolator;
 import android.view.animation.Interpolator;
 import android.view.animation.TranslateAnimation;
-import android.view.animation.Animation.AnimationListener;
 import android.widget.ViewAnimator;
 
 /**
@@ -40,6 +42,14 @@ import android.widget.ViewAnimator;
  *
  */
 public class AnimationFactory {
+	
+	/** In some devices the flip animation runs very slowly. In these cases we change to fade animation. 
+	 * 	(The format of each device string is "MANUFACTURER,MODEL")
+	 * */
+	public static String[] SLOW_FLIP_DEVICES = new String[]{"LGE,g3","LGE,Nexus 5"};
+	
+	private static ValueAnimator mFlipAnimator = null;
+
 	
 	private static final int DEFAULT_FLIP_TRANSITION_DURATION = 500;
 
@@ -119,6 +129,7 @@ public class AnimationFactory {
 	 * @return
 	 */
 	public static Animation[] flipAnimation(final View fromView, final View toView, FlipDirection dir, long duration, Interpolator interpolator) {
+		
 		Animation[] result = new Animation[2];
 		float centerX;
 		float centerY;
@@ -173,10 +184,68 @@ public class AnimationFactory {
 	public static void flipTransition(final ViewAnimator viewAnimator, FlipDirection dir) {   
 		flipTransition(viewAnimator, dir, DEFAULT_FLIP_TRANSITION_DURATION);
 	}
+	
+	/**
+	 * Flip to the next view of the {@code ViewAnimator}'s subviews. A call to this method will initiate 
+	 * a {@link FlipAnimation} to show the next View. If the currently visible view is the last view, 
+	 * flip direction will be reversed for this transition.
+	 * 
+	 * In some devices, 2K screen devices and some others with Lollipop, the flip 
+	 * animation runs slowly or laggy. To avoid this, device hardware information
+	 * is checked against a list {@link SLOW_FLIP_DEVICES}.
+	 *  
+	 * @param viewAnimator
+	 * @param dir
+	 * @param checkForLaggyDevices	If set to TRUE, flip effect will occur only
+	 * 															if the device is not a detected laggy device with
+	 * 															Flip effect.
+	 */
+	public static void flipTransition(final ViewAnimator viewAnimator, FlipDirection dir, boolean checkForLaggyDevices, boolean enablefadeForLaggyDevices) {
+		if(checkForLaggyDevices && isFlipAnimationSlow(device_getExtraInfo(), null) ){
+			//In this devices the flip transition runs slowly so we change to fade animation
+			if(enablefadeForLaggyDevices)				
+				fadeTransition(viewAnimator, 50, 50); //Default fade duration.
+			else
+				viewAnimator.showNext();
+		}else{
+			flipTransition(viewAnimator, dir, DEFAULT_FLIP_TRANSITION_DURATION);
+		}
+	}
+	
+	/**
+	 * Flip to the next view of the {@code ViewAnimator}'s subviews. A call to this method will initiate 
+	 * a {@link FlipAnimation} to show the next View. If the currently visible view is the last view, 
+	 * flip direction will be reversed for this transition.
+	 * 
+	 * In some devices, 2K screen devices and some others with Lollipop, the flip 
+	 * animation runs slowly or laggy. To avoid this, device hardware information
+	 * is checked against a list {@link SLOW_FLIP_DEVICES}.
+	 * 
+	 * @param viewAnimator
+	 * @param dir
+	 * @param checkForLaggyDevices
+	 * @param laggyDevices	Can be null. If null, default {@link SLOW_FLIP_DEVICES} laggy device string list will be used.
+	 * @param enablefadeForLaggyDevices	If set to TRUE, flip effect will occur only
+	 * 																	if the device is not a detected laggy device with
+	 * 																	Flip effect.
+	 */
+	public static void flipTransition(final ViewAnimator viewAnimator, FlipDirection dir, boolean checkForLaggyDevices, String[] laggyDevices, boolean enablefadeForLaggyDevices) {
+		if(checkForLaggyDevices && isFlipAnimationSlow(device_getExtraInfo(), laggyDevices) ){
+			//In this devices the flip transition runs slowly so we change to fade animation
+			if(enablefadeForLaggyDevices)				
+				fadeTransition(viewAnimator, 50, 50); //Default fade duration.
+			else
+				viewAnimator.showNext();
+		}else{
+			flipTransition(viewAnimator, dir, DEFAULT_FLIP_TRANSITION_DURATION);
+		}
+	}
 
 	/**
-	 * Flip to the next view of the {@code ViewAnimator}'s subviews. A call to this method will initiate a {@link FlipAnimation} to show the next View.  
-	 * If the currently visible view is the last view, flip direction will be reversed for this transition.
+	 * Flip to the next view of the {@code ViewAnimator}'s subviews. A call 
+	 * to this method will initiate a {@link FlipAnimation} to show the next 
+	 * View. If the currently visible view is the last view, flip direction 
+	 * will be reversed for this transition.
 	 *  
 	 * @param viewAnimator the {@code ViewAnimator}
 	 * @param dir the direction of flip
@@ -188,19 +257,237 @@ public class AnimationFactory {
 		final int currentIndex = viewAnimator.getDisplayedChild();
 		final int nextIndex = (currentIndex + 1)%viewAnimator.getChildCount();
 		
-		final View toView = viewAnimator.getChildAt(nextIndex);
-
-		Animation[] animc = AnimationFactory.flipAnimation(fromView, toView, (nextIndex < currentIndex?dir.theOtherDirection():dir), duration, null);
-  
-		viewAnimator.setOutAnimation(animc[0]);
-		viewAnimator.setInAnimation(animc[1]);
-		
-		viewAnimator.showNext();   
+		final View toView = viewAnimator.getChildAt(nextIndex);		
+				
+		if(android.os.Build.VERSION.SDK_INT>=12) {
+			//New way of flipping.
+			flipTransition(fromView, toView);
+		}else{
+			//Traditional flip.
+			Animation[] animc = AnimationFactory.flipAnimation(fromView, toView, 
+					(nextIndex < currentIndex?dir.theOtherDirection():dir), duration, null);
+			viewAnimator.setOutAnimation(animc[0]);
+			viewAnimator.setInAnimation(animc[1]);
+			viewAnimator.showNext();
+		}	   
 	}
 	
+	/**
+	 * Flip to the next view of the {@code ViewAnimator}'s subviews. A call 
+	 * to this method will initiate a {@link FlipAnimation} to show the next 
+	 * View. If the currently visible view is the last view, flip direction 
+	 * will be reversed for this transition.
+	 * 
+	 * In some devices, 2K screen devices and some others with Lollipop, the flip 
+	 * animation runs slowly or laggy. To avoid this, device hardware information
+	 * is checked against a list {@link SLOW_FLIP_DEVICES}.
+	 * 
+	 * @param viewAnimator
+	 * @param dir
+	 * @param duration
+	 * @param checkForLaggyDevices	If set to TRUE, flip effect will occur only
+	 * 															if the device is not a detected laggy device with
+	 * 															Flip effect.
+	 */
+	public static void flipTransition(final ViewAnimator viewAnimator, FlipDirection dir, long duration, boolean checkForLaggyDevices, boolean enablefadeForLaggyDevices) {   
+		
+		final View fromView = viewAnimator.getCurrentView();
+		final int currentIndex = viewAnimator.getDisplayedChild();
+		final int nextIndex = (currentIndex + 1)%viewAnimator.getChildCount();
+		
+		final View toView = viewAnimator.getChildAt(nextIndex);
+		
+		if(checkForLaggyDevices && isFlipAnimationSlow(device_getExtraInfo(), null) ){
+			//In this devices the flip transition runs slowly so we change to fade animation
+			if(enablefadeForLaggyDevices)
+				fadeTransition(viewAnimator, 50, 50); //Default fade duration.
+			else
+				viewAnimator.showNext();
+		}else{		
+			if(android.os.Build.VERSION.SDK_INT>=12) {
+				//New way of flipping.
+				flipTransition(fromView, toView); 
+			}else{
+				//Traditional flip.
+				Animation[] animc = AnimationFactory.flipAnimation(fromView, toView, 
+						(nextIndex < currentIndex?dir.theOtherDirection():dir), duration, null);
+				viewAnimator.setOutAnimation(animc[0]);
+				viewAnimator.setInAnimation(animc[1]);
+				viewAnimator.showNext();
+			}
+		}		   
+	}
+	
+	/**
+	 * Flip to the next view of the {@code ViewAnimator}'s subviews. A call 
+	 * to this method will initiate a {@link FlipAnimation} to show the next 
+	 * View. If the currently visible view is the last view, flip direction 
+	 * will be reversed for this transition.
+	 * 
+	 * In some devices, 2K screen devices and some others with Lollipop, the flip 
+	 * animation runs slowly or laggy. To avoid this, device hardware information
+	 * is checked against a list {@link SLOW_FLIP_DEVICES}.
+	 * 
+	 * @param viewAnimator
+	 * @param dir
+	 * @param duration
+	 * @param checkForLaggyDevices
+	 * @param laggyDevices	Can be null. If null, default {@link SLOW_FLIP_DEVICES} laggy device string list will be used.
+	 * @param enablefadeForLaggyDevices	If set to TRUE, flip effect will occur only
+	 * 																	if the device is not a detected laggy device with
+	 * 																	Flip effect.
+	 */
+	public static void flipTransition(final ViewAnimator viewAnimator, FlipDirection dir, long duration, boolean checkForLaggyDevices, String[] laggyDevices, boolean enablefadeForLaggyDevices) {   
+		
+		final View fromView = viewAnimator.getCurrentView();
+		final int currentIndex = viewAnimator.getDisplayedChild();
+		final int nextIndex = (currentIndex + 1)%viewAnimator.getChildCount();
+		
+		final View toView = viewAnimator.getChildAt(nextIndex);
+		
+		if(checkForLaggyDevices && isFlipAnimationSlow(device_getExtraInfo(), laggyDevices) ){
+			//In this devices the flip transition runs slowly so we change to fade animation
+			if(enablefadeForLaggyDevices)
+				fadeTransition(viewAnimator, 50, 50); //Default fade duration.
+			else
+				viewAnimator.showNext();
+		}else{		
+			if(android.os.Build.VERSION.SDK_INT>=12) {
+				//New way of flipping.
+				flipTransition(fromView, toView); 
+			}else{
+				//Traditional flip.
+				Animation[] animc = AnimationFactory.flipAnimation(fromView, toView, 
+						(nextIndex < currentIndex?dir.theOtherDirection():dir), duration, null);
+				viewAnimator.setOutAnimation(animc[0]);
+				viewAnimator.setInAnimation(animc[1]);
+				viewAnimator.showNext();
+			}
+		}		   
+	}	
+	
 	//////////////
+	
+	
+	/**
+	 * Get device extra information like Manufacturer,
+	 * brand and device model info.
+	 * 
+	 * @return
+	 */
+	private static String device_getExtraInfo() {
+		String extra = 	android.os.Build.MANUFACTURER + 
+						(android.os.Build.BRAND!=null?"/" + android.os.Build.BRAND:"") +
+						"/" + android.os.Build.DEVICE + 
+						"/" + android.os.Build.MODEL +
+						"/" + android.os.Build.HARDWARE +
+						"/" + android.os.Build.PRODUCT;
+						
+		return extra;
+	}
+	
+	/**
+	 * This method makes a flip by using ValueAnimator and
+	 * a Flip Listener.<br><br>
+	 * 
+	 * NOTE: Only for Android API Level 12+
+	 * 
+	 * @param fromView
+	 * @param toView
+	 */
+	@SuppressLint("NewApi")
+	private static void flipTransition(View fromView, View toView) {
+		if(mFlipAnimator==null) {
+			mFlipAnimator = ValueAnimator.ofFloat(0f, 1f);
+		}
+		
+		mFlipAnimator.addUpdateListener(new FlipListener(fromView, toView));
+		if(mFlipAnimator.getAnimatedFraction() == 1) {
+			//Already flipped
+			mFlipAnimator.reverse();
+		}else{
+			mFlipAnimator.start();
+		}
+		
+		/*
+		final float currentValue = mFlipAnimator.getAnimatedFraction();
+    boolean isFlipping = (currentValue < 1 && currentValue > 0);*/
+	}
+	
+	/**
+	 * Fades out the current view to the next view of the {@code ViewAnimator}'s subviews with a fade in
+	 * effect. If the currently visible view is the last view, fade will restore the front view.
+	 * 
+	 * @param viewAnimator
+	 * @param fadeOutDuration
+	 * @param fadeInDuration
+	 */
+	public static void fadeTransition(final ViewAnimator viewAnimator, long fadeOutDuration, long fadeInDuration) {
 
- 
+		final View fromView = viewAnimator.getCurrentView();
+		final int currentIndex = viewAnimator.getDisplayedChild();
+		final int nextIndex = (currentIndex + 1) % viewAnimator.getChildCount();
+
+		final View toView = viewAnimator.getChildAt(nextIndex);
+		
+		Animation[] animc = fadeTransition(fromView, toView, fadeOutDuration, fadeInDuration);
+		
+		viewAnimator.setOutAnimation(animc[0]);
+		viewAnimator.setInAnimation(animc[1]);
+		viewAnimator.showNext();
+		
+	}
+	
+	/**
+	 * Fades out the current view to the next view of the {@code ViewAnimator}'s subviews with a fade in
+	 * effect. If the currently visible view is the last view, fade will restore the front view.
+	 * 
+	 * @param fromView
+	 * @param toView
+	 * @param fadeOutDuration
+	 * @param fadeInDuration
+	 * @return
+	 */
+	public static Animation[] fadeTransition(final View fromView, final View toView, long fadeOutDuration, long fadeInDuration) {
+
+		Animation[] result = new Animation[2];
+		result[0] = AnimationFactory.fadeOutAnimation(fadeOutDuration, fromView);
+		result[1] = AnimationFactory.fadeInAnimation(fadeInDuration, toView);
+		
+		return result;
+	}
+	
+	/**
+	 * Checks if the device belongs to a reported flip laggy device.
+	 * 
+	 * @param deviceHardwareInfo
+	 * @param laggyDevices
+	 * @return
+	 */
+	private static boolean isFlipAnimationSlow(String deviceHardwareInfo, String[] laggyDevices) {
+		boolean res = false;
+		
+		if(laggyDevices==null || (laggyDevices!=null && laggyDevices.length==0)) {
+			laggyDevices = SLOW_FLIP_DEVICES;
+		}
+		
+		String[] dInfo = null;
+		String dManufacturer = null, dModel = null;				
+		for(String d:SLOW_FLIP_DEVICES) {
+			dInfo = d.split(",");
+			dManufacturer = dInfo[0];
+			dModel = dInfo[1];
+			
+			if(deviceHardwareInfo.contains(dManufacturer) && deviceHardwareInfo.contains(dModel)){
+				res = true;
+				break;
+			}
+		}
+		
+		return res;
+	}
+	
+	
 	/**
 	 * Slide animations to enter a view from left.
 	 * 
