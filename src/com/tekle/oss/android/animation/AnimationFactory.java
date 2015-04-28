@@ -19,7 +19,7 @@
  *  @author Ephraim A. Tekle
  *
  */
-package com.tekle.oss.android.animation;  
+package com.tekle.oss.android.animation;
 
 import android.animation.ValueAnimator;
 import android.annotation.SuppressLint;
@@ -200,10 +200,39 @@ public class AnimationFactory {
 	 * 															if the device is not a detected laggy device with
 	 * 															Flip effect.
 	 */
-	public static void flipTransition(final ViewAnimator viewAnimator, FlipDirection dir, boolean checkForLaggyDevices, boolean enableFadeForLaggyDevices) {
-		if(checkForLaggyDevices && isFlipAnimationSlow(device_getExtraInfo()) ){
+	public static void flipTransition(final ViewAnimator viewAnimator, FlipDirection dir, boolean checkForLaggyDevices, boolean enablefadeForLaggyDevices) {
+		if(checkForLaggyDevices && isFlipAnimationSlow(device_getExtraInfo(), null) ){
 			//In this devices the flip transition runs slowly so we change to fade animation
-			if(enableFadeForLaggyDevices)				
+			if(enablefadeForLaggyDevices)				
+				fadeTransition(viewAnimator, 50, 50); //Default fade duration.
+			else
+				viewAnimator.showNext();
+		}else{
+			flipTransition(viewAnimator, dir, DEFAULT_FLIP_TRANSITION_DURATION);
+		}
+	}
+	
+	/**
+	 * Flip to the next view of the {@code ViewAnimator}'s subviews. A call to this method will initiate 
+	 * a {@link FlipAnimation} to show the next View. If the currently visible view is the last view, 
+	 * flip direction will be reversed for this transition.
+	 * 
+	 * In some devices, 2K screen devices and some others with Lollipop, the flip 
+	 * animation runs slowly or laggy. To avoid this, device hardware information
+	 * is checked against a list {@link SLOW_FLIP_DEVICES}.
+	 * 
+	 * @param viewAnimator
+	 * @param dir
+	 * @param checkForLaggyDevices
+	 * @param laggyDevices	Can be null. If null, default {@link SLOW_FLIP_DEVICES} laggy device string list will be used.
+	 * @param enablefadeForLaggyDevices	If set to TRUE, flip effect will occur only
+	 * 																	if the device is not a detected laggy device with
+	 * 																	Flip effect.
+	 */
+	public static void flipTransition(final ViewAnimator viewAnimator, FlipDirection dir, boolean checkForLaggyDevices, String[] laggyDevices, boolean enablefadeForLaggyDevices) {
+		if(checkForLaggyDevices && isFlipAnimationSlow(device_getExtraInfo(), laggyDevices) ){
+			//In this devices the flip transition runs slowly so we change to fade animation
+			if(enablefadeForLaggyDevices)				
 				fadeTransition(viewAnimator, 50, 50); //Default fade duration.
 			else
 				viewAnimator.showNext();
@@ -260,7 +289,7 @@ public class AnimationFactory {
 	 * 															if the device is not a detected laggy device with
 	 * 															Flip effect.
 	 */
-	public static void flipTransition(final ViewAnimator viewAnimator, FlipDirection dir, long duration, boolean checkForLaggyDevices, boolean enableFadeForLaggyDevices) {   
+	public static void flipTransition(final ViewAnimator viewAnimator, FlipDirection dir, long duration, boolean checkForLaggyDevices, boolean enablefadeForLaggyDevices) {   
 		
 		final View fromView = viewAnimator.getCurrentView();
 		final int currentIndex = viewAnimator.getDisplayedChild();
@@ -268,9 +297,9 @@ public class AnimationFactory {
 		
 		final View toView = viewAnimator.getChildAt(nextIndex);
 		
-		if(checkForLaggyDevices && isFlipAnimationSlow(device_getExtraInfo()) ){
+		if(checkForLaggyDevices && isFlipAnimationSlow(device_getExtraInfo(), null) ){
 			//In this devices the flip transition runs slowly so we change to fade animation
-			if(enableFadeForLaggyDevices)
+			if(enablefadeForLaggyDevices)
 				fadeTransition(viewAnimator, 50, 50); //Default fade duration.
 			else
 				viewAnimator.showNext();
@@ -288,6 +317,54 @@ public class AnimationFactory {
 			}
 		}		   
 	}
+	
+	/**
+	 * Flip to the next view of the {@code ViewAnimator}'s subviews. A call 
+	 * to this method will initiate a {@link FlipAnimation} to show the next 
+	 * View. If the currently visible view is the last view, flip direction 
+	 * will be reversed for this transition.
+	 * 
+	 * In some devices, 2K screen devices and some others with Lollipop, the flip 
+	 * animation runs slowly or laggy. To avoid this, device hardware information
+	 * is checked against a list {@link SLOW_FLIP_DEVICES}.
+	 * 
+	 * @param viewAnimator
+	 * @param dir
+	 * @param duration
+	 * @param checkForLaggyDevices
+	 * @param laggyDevices	Can be null. If null, default {@link SLOW_FLIP_DEVICES} laggy device string list will be used.
+	 * @param enablefadeForLaggyDevices	If set to TRUE, flip effect will occur only
+	 * 																	if the device is not a detected laggy device with
+	 * 																	Flip effect.
+	 */
+	public static void flipTransition(final ViewAnimator viewAnimator, FlipDirection dir, long duration, boolean checkForLaggyDevices, String[] laggyDevices, boolean enablefadeForLaggyDevices) {   
+		
+		final View fromView = viewAnimator.getCurrentView();
+		final int currentIndex = viewAnimator.getDisplayedChild();
+		final int nextIndex = (currentIndex + 1)%viewAnimator.getChildCount();
+		
+		final View toView = viewAnimator.getChildAt(nextIndex);
+		
+		if(checkForLaggyDevices && isFlipAnimationSlow(device_getExtraInfo(), laggyDevices) ){
+			//In this devices the flip transition runs slowly so we change to fade animation
+			if(enablefadeForLaggyDevices)
+				fadeTransition(viewAnimator, 50, 50); //Default fade duration.
+			else
+				viewAnimator.showNext();
+		}else{		
+			if(android.os.Build.VERSION.SDK_INT>=12) {
+				//New way of flipping.
+				flipTransition(fromView, toView); 
+			}else{
+				//Traditional flip.
+				Animation[] animc = AnimationFactory.flipAnimation(fromView, toView, 
+						(nextIndex < currentIndex?dir.theOtherDirection():dir), duration, null);
+				viewAnimator.setOutAnimation(animc[0]);
+				viewAnimator.setInAnimation(animc[1]);
+				viewAnimator.showNext();
+			}
+		}		   
+	}	
 	
 	//////////////
 	
@@ -380,11 +457,22 @@ public class AnimationFactory {
 		return result;
 	}
 	
-	private static boolean isFlipAnimationSlow(String deviceHardwareInfo) {
+	/**
+	 * Checks if the device belongs to a reported flip laggy device.
+	 * 
+	 * @param deviceHardwareInfo
+	 * @param laggyDevices
+	 * @return
+	 */
+	private static boolean isFlipAnimationSlow(String deviceHardwareInfo, String[] laggyDevices) {
 		boolean res = false;
 		
+		if(laggyDevices==null || (laggyDevices!=null && laggyDevices.length==0)) {
+			laggyDevices = SLOW_FLIP_DEVICES;
+		}
+		
 		String[] dInfo = null;
-		String dManufacturer = null, dModel = null;
+		String dManufacturer = null, dModel = null;				
 		for(String d:SLOW_FLIP_DEVICES) {
 			dInfo = d.split(",");
 			dManufacturer = dInfo[0];
